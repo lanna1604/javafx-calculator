@@ -5,8 +5,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class CalculatorController {
     @FXML
@@ -24,7 +25,7 @@ public class CalculatorController {
     @FXML
     private TextField output;
 
-    private BigDecimal firstNumber;
+    private Double firstNumber;
     private String binaryOperator;
     private boolean lastButtonWasDigit = true;
 
@@ -83,9 +84,8 @@ public class CalculatorController {
         String unaryOperator = ((Button) actionEvent.getSource()).getText();
 
         switch (unaryOperator) {
-            case CalculatorConstants.OPERATOR_PERCENT ->
-                    setNumber(getNumber().divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-            case CalculatorConstants.OPERATOR_NEGATE -> setNumber(getNumber().negate());
+            case CalculatorConstants.OPERATOR_PERCENT -> setNumber(getNumber() / 100);
+            case CalculatorConstants.OPERATOR_NEGATE -> setNumber(getNumber() * -1);
             default -> throw new IllegalArgumentException("Unknown operator " + unaryOperator);
         }
     }
@@ -124,31 +124,41 @@ public class CalculatorController {
         output.setText(outputNumber);
     }
 
-    private BigDecimal getNumber() {
-        return new BigDecimal(getOutputString());
+    private double getNumber() {
+        return Double.parseDouble(getOutputString());
     }
 
-    private void setNumber(BigDecimal newNumber) {
-        setOutputString(newNumber.toPlainString());
+    private void setNumber(double number) {
+        String text;
+        double abs = Math.abs(number);
+
+        if (abs >= 1_000_000_000 || (abs > 0 && abs < 0.000001)) {
+            DecimalFormat df = new DecimalFormat("0.########E0", DecimalFormatSymbols.getInstance(Locale.US));
+            text = df.format(number);
+        } else {
+            DecimalFormat df = new DecimalFormat("0.########", DecimalFormatSymbols.getInstance(Locale.US));
+            text = df.format(number);
+        }
+
+        setOutputString(text);
     }
 
     private boolean isOutputEmpty() {
         return getOutputString().equals(CalculatorConstants.OUTPUT_EMPTY_VALUE);
     }
 
-    private BigDecimal calculate() {
-        BigDecimal secondNumber = getNumber();
+    private Double calculate() {
+        Double secondNumber = getNumber();
 
         return switch (binaryOperator) {
-            case CalculatorConstants.OPERATOR_ADD -> firstNumber.add(secondNumber);
-            case CalculatorConstants.OPERATOR_SUBTRACT -> firstNumber.subtract(secondNumber);
-            case CalculatorConstants.OPERATOR_MULTIPLY -> firstNumber.multiply(secondNumber);
+            case CalculatorConstants.OPERATOR_ADD -> firstNumber + secondNumber;
+            case CalculatorConstants.OPERATOR_SUBTRACT -> firstNumber - secondNumber;
+            case CalculatorConstants.OPERATOR_MULTIPLY -> firstNumber * secondNumber;
             case CalculatorConstants.OPERATOR_DIVIDE -> {
-                if (secondNumber.compareTo(BigDecimal.ZERO) == 0) {
-                    yield BigDecimal.valueOf(Double.NaN);
+                if (secondNumber == 0) {
+                    yield Double.NaN;
                 }
-
-                yield firstNumber.divide(secondNumber, 10, RoundingMode.HALF_UP);
+                yield firstNumber / secondNumber;
             }
             default -> throw new IllegalArgumentException("Unknown operator " + binaryOperator);
         };
