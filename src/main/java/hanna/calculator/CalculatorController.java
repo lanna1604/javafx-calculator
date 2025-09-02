@@ -93,7 +93,7 @@ public class CalculatorController {
     @FXML
     private void handleBinaryButtonClick(ActionEvent actionEvent) {
         if (lastButtonWasDigit) {
-            if (firstNumber != null) {
+            if (firstNumber != null && binaryOperator != null) {
                 setNumber(calculate());
             }
 
@@ -106,7 +106,7 @@ public class CalculatorController {
 
     @FXML
     private void handleEqualButtonClick(ActionEvent actionEvent) {
-        if (lastButtonWasDigit && firstNumber != null) {
+        if (lastButtonWasDigit && firstNumber != null && binaryOperator != null) {
             setNumber(calculate());
 
             firstNumber = getNumber();
